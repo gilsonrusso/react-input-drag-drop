@@ -1,0 +1,57 @@
+name: Bump Version and Update ArgoCD Manifest
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+
+jobs:
+  bump_version:
+    if: |
+      github.event.pull_request.merged == true &&
+      (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'stage')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify type of bump
+        id: check_label
+        run: |
+          bump="patch"
+          if [[ $(echo "${{ toJson(github.event.pull_request.labels) }}" | grep "major") ]]; then
+            bump="major"
+          elif [[ $(echo "${{ toJson(github.event.pull_request.labels) }}" | grep "minor") ]]; then
+            bump="minor"
+          elif [[ $(echo "${{ toJson(github.event.pull_request.labels) }}" | grep "pre-release") ]]; then
+            bump="pre"
+          fi
+          echo "BUMP_TYPE=$bump" >> $GITHUB_ENV
+
+      - name: Increment Version and Create Tag
+        id: bump
+        uses: anothrNick/github-tag-action@1.71.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BUMP: ${{ env.BUMP_TYPE }}
+          WITH_V: true
+
+      - name: Getting Version
+        id: get_version
+        run: echo "New Version=${{ steps.bump.outputs.new_tag }}"
+
+      - name: Update ArgoCD Manifest
+        run: |
+          git clone https://github.com/gilsonrusso/react-input-drag-drop-argo-cd.git
+          cd react-input-drag-drop-argo-cd
+          echo "version ${{ steps.bump.outputs.new_tag }}" > deployment.yaml
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add version.yaml
+          git commit -m "Update version to ${{ steps.bump.outputs.new_tag  }}"
+          git push https://gilsonrusso:${{ secrets.ARGOCD_REPO_TOKEN }}@github.com/gilsonrusso/react-input-drag-drop-argo-cd.git main

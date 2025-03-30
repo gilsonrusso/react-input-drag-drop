@@ -57,6 +57,18 @@ Use um arquivo JSON no seguinte formato para testar o upload:
 - `npm run build`: Cria a build de produção.
 - `npm run lint`: Verifica erros de lint no código.
 
+## Controle de Versão
+
+Para realizar o **bump de versão**, siga os passos abaixo:
+
+1. Crie um **Pull Request** para os branches `main` ou `stage`.
+2. Adicione uma das labels ao PR para definir o tipo de versão:
+   - **major** → Incrementa de `1.0.0` para `2.0.0`.
+   - **minor** → Incrementa de `1.0.0` para `1.1.0`.
+   - **patch** → Incrementa de `1.0.0` para `1.0.1`.
+   - **pre-release** → Cria uma tag como `1.0.1-beta`.
+3. Ao fazer o merge do PR, o **GitHub Actions** gera automaticamente a tag correspondente.
+
 ## Licença
 
 Este projeto está licenciado sob a [MIT License](LICENSE).
