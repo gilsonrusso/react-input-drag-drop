@@ -21,7 +21,6 @@ export const BasicForm = () => {
         try {
           if (e.target && e.target.result) {
             const dados = JSON.parse(e.target.result as string);
-            console.log("::::dados", dados);
             setPerguntas(dados);
           }
         } catch (error) {
@@ -41,7 +40,6 @@ export const BasicForm = () => {
     const file = event.target.files[0];
     processFile(file);
   };
-
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
