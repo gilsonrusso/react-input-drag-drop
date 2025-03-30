@@ -51,6 +51,6 @@ jobs:
           echo "version ${{ steps.bump.outputs.new_tag }}" > deployment.yaml
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add version.yaml
+          git add deplyment.yaml
           git commit -m "Update version to ${{ steps.bump.outputs.new_tag  }}"
           git push https://gilsonrusso:${{ secrets.ARGOCD_REPO_TOKEN }}@github.com/gilsonrusso/react-input-drag-drop-argo-cd.git main
