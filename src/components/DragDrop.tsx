@@ -7,7 +7,7 @@ type Question = {
   sentenca: string;
 };
 
-export const BasicForm = () => {
+export const DragDrop = () => {
   const [perguntas, setPerguntas] = useState<Question[]>([]);
   const [isDragging, setIsDragging] = useState(false); // Estado para indicar arraste
   const dropAreaRef = useRef<HTMLDivElement | null>(null);
