@@ -122,9 +122,10 @@ jobs:
       - name: Load version from artifact
         id: package_version
         run: |
-          VERSION=$(cat version.txt)
+          VERSION=$(cat version-artifact/version.txt)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          cat version-artifact/version.txt
 
       - name: Extract metadata (version from package.json)
         id: meta
