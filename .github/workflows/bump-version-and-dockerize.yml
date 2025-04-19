@@ -120,11 +120,10 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/seu-projeto
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPO_NAME }}
           tags: |
             latest
             v${{ steps.package_version.outputs.VERSION }}
-            ${{ github.sha }}
 
       - name: Set Dockerfile dynamically
         id: set_dockerfile
