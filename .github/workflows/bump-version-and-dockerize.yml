@@ -47,9 +47,6 @@ jobs:
           fi
           echo "BUMP_TYPE=$bump" >> $GITHUB_ENV
 
-      - name: Install semver
-        run: npm install -g semver
-
       - name: Increment Version
         id: bump_version
         run: |

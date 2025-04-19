@@ -5,6 +5,10 @@ on:
     types:
       - closed
     branches: ["main", "stage"]
+  workflow_run:
+    workflows: ["Bump Version"] # Nome do workflow de bump-version
+    types:
+      - completed
 
 jobs:
   update_argocd:
