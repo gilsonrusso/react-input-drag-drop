@@ -1,23 +1,30 @@
 name: Update ArgoCD Manifest Tags
 
 on:
-  pull_request:
-    types:
-      - closed
-    branches: ["main", "stage"]
   workflow_run:
-    workflows: ["Bump Version"] # Nome do workflow de bump-version
+    workflows: ["Bump Version and Dockerize"]
     types:
       - completed
 
 jobs:
   update_argocd:
-    if: github.event.pull_request.merged == true
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
+      - name: Download workflow artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: version
+
+      - name: Read version from artifact
+        id: get_version
+        run: |
+          VERSION=$(cat version.txt)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
       - name: Checkout ArgoCD Manifest Repository (main branch)
         uses: actions/checkout@v4
         with:
@@ -33,26 +40,22 @@ jobs:
         if: github.event.pull_request.base.ref == 'main'
         run: |
           cd argocd-trainning
-          # Assuming the tag 'vXX' is the new version from the frontend repo
-          NEW_VERSION=$(echo "${{ github.event.pull_request.head.ref }}" | sed -E 's/.*v([0-9.]+)/\1/' || echo "latest")
-          IMAGE_TAG="v${NEW_VERSION}"
+          IMAGE_TAG="v${VERSION}"
           yq -y ".app.image.tag = \"$IMAGE_TAG\"" values.prod.yaml -i
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add values.prod.yaml
-          git commit -m "Update production image tag to v${NEW_VERSION}"
+          git commit -m "Update production image tag to v${VERSION}"
           git push origin main
 
       - name: Update values.stage.yaml (on merge to stage)
         if: github.event.pull_request.base.ref == 'stage'
         run: |
           cd argocd-trainning
-          # Assuming the tag 'vXX' is the new version from the frontend repo
-          NEW_VERSION=$(echo "${{ github.event.pull_request.head.ref }}" | sed -E 's/.*v([0-9.]+)/\1/' || echo "latest")
-          IMAGE_TAG="v${NEW_VERSION}"
+          IMAGE_TAG="v${VERSION}"
           yq -y ".app.image.tag = \"$IMAGE_TAG\"" values.stage.yaml -i
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add values.stage.yaml
-          git commit -m "Update staging image tag to v${NEW_VERSION}"
+          git commit -m "Update staging image tag to v${VERSION}"
           git push origin main
