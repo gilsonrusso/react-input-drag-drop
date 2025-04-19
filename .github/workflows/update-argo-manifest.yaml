@@ -36,7 +36,7 @@ jobs:
           # Assuming the tag 'vXX' is the new version from the frontend repo
           NEW_VERSION=$(echo "${{ github.event.pull_request.head.ref }}" | sed -E 's/.*v([0-9.]+)/\1/' || echo "latest")
           IMAGE_TAG="v${NEW_VERSION}"
-          yq ".app.image.tag = \"$IMAGE_TAG\"" values.prod.yaml -i
+          yq -y ".app.image.tag = \"$IMAGE_TAG\"" values.prod.yaml -i
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add values.prod.yaml
@@ -50,7 +50,7 @@ jobs:
           # Assuming the tag 'vXX' is the new version from the frontend repo
           NEW_VERSION=$(echo "${{ github.event.pull_request.head.ref }}" | sed -E 's/.*v([0-9.]+)/\1/' || echo "latest")
           IMAGE_TAG="v${NEW_VERSION}"
-          yq ".app.image.tag = \"$IMAGE_TAG\"" values.stage.yaml -i
+          yq -y ".app.image.tag = \"$IMAGE_TAG\"" values.stage.yaml -i
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add values.stage.yaml
