@@ -22,7 +22,7 @@ jobs:
       - name: Read version from artifact
         id: get_version
         run: |
-          VERSION=$(cat version.txt)
+          VERSION=$(cat version-artifact/version.txt)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Checkout ArgoCD Manifest Repository (main branch)
