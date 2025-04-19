@@ -65,6 +65,10 @@ jobs:
           ")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
+      - name: Debug - Print head_ref
+        run: |
+          echo "GITHUB_HEAD_REF: ${{ github.head_ref }}"
+
       - name: Update package.json with new version
         run: |
           sed -i "s/\"version\": \"${{ env.CURRENT_VERSION }}\"/\"version\": \"${{ env.NEW_VERSION }}\"/" package.json
