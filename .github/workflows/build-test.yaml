@@ -6,10 +6,10 @@ name: Build and Test
 # The workflow includes steps to checkout the repository, setup Node.js, install dependencies, and build the application.
 
 on:
-  push:
-    branches: ["main", "stage", "dev"]
+  # push:
+  #   branches: ["main", "stage", "dev"]
   pull_request:
-    branches: ["main", "stage"]
+    branches: ["main", "stage", "dev"]
 
 jobs:
   build:

@@ -64,16 +64,13 @@ jobs:
             console.log(newVersion);
           ")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-
-      - name: Save version as artifact
-        run: |
           echo "${{ env.NEW_VERSION }}" > version.txt
 
       - name: Upload version artifact
         uses: actions/upload-artifact@v4
         with:
           name: version
-          path: version.tx
+          path: version.txt
 
       - name: Debug - Print head_ref
         run: |
