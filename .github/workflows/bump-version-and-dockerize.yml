@@ -69,6 +69,9 @@ jobs:
         run: |
           echo "GITHUB_HEAD_REF: ${{ github.head_ref }}"
 
+      - name: Fetch all branches
+        run: git fetch --all
+
       - name: Update package.json with new version
         run: |
           sed -i "s/\"version\": \"${{ env.CURRENT_VERSION }}\"/\"version\": \"${{ env.NEW_VERSION }}\"/" package.json
