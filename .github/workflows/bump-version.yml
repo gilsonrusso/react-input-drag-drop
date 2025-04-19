@@ -1,23 +1,29 @@
-name: Bump Version and Update ArgoCD Manifest
+name: Bump Version
 
 on:
   pull_request:
     types:
       - closed
+    branches: ["main", "stage"]
 
 jobs:
   bump_version:
-    if: |
-      github.event.pull_request.merged == true &&
-      (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'stage')
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # Necessário para commitar e criar tag
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Get current version from package.json
+        id: get_current_version
+        run: |
+          current_version=$(jq -r '.version' package.json)
+          echo "CURRENT_VERSION=$current_version" >> $GITHUB_ENV
 
       - name: Verify type of bump
         id: check_label
@@ -32,25 +38,32 @@ jobs:
           fi
           echo "BUMP_TYPE=$bump" >> $GITHUB_ENV
 
-      - name: Increment Version and Create Tag
-        id: bump
-        uses: anothrNick/github-tag-action@1.71.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DEFAULT_BUMP: ${{ env.BUMP_TYPE }}
-          WITH_V: true
-
-      - name: Getting Version
-        id: get_version
-        run: echo "New Version=${{ steps.bump.outputs.new_tag }}"
-
-      - name: Update ArgoCD Manifest
+      - name: Increment Version
+        id: bump_version
         run: |
-          git clone https://github.com/gilsonrusso/react-input-drag-drop-argo-cd.git
-          cd react-input-drag-drop-argo-cd
-          echo "version ${{ steps.bump.outputs.new_tag }}" > version.txt
+          NEW_VERSION=$(node -e "
+            const semver = require('semver');
+            const currentVersion = '${{ env.CURRENT_VERSION }}';
+            let bumpType = '${{ env.BUMP_TYPE }}';
+            if (bumpType === 'pre') {
+              bumpType = 'prerelease';
+            }
+            const newVersion = semver.inc(currentVersion, bumpType);
+            console.log(newVersion);
+          ")
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Update package.json with new version
+        run: |
+          sed -i "s/\"version\": \"${{ env.CURRENT_VERSION }}\"/\"version\": \"${{ env.NEW_VERSION }}\"/" package.json
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add version.txt
-          git commit -m "Update version to ${{ steps.bump.outputs.new_tag  }}"
-          git push https://gilsonrusso:${{ secrets.GH_TOKEN_VERSION_REPO }}@github.com/gilsonrusso/react-input-drag-drop-argo-cd.git main
+          git add package.json
+          git commit -m "Bump version to ${{ env.NEW_VERSION }}"
+          git push origin ${{ github.head_ref }} # Empurra para a branch do PR mergeado
+
+      - name: Create Git Tag
+        id: create_tag
+        run: |
+          git tag -a "v${{ env.NEW_VERSION }}" -m "Version ${{ env.NEW_VERSION }}"
+          git push origin --tags
