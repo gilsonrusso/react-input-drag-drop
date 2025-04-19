@@ -67,7 +67,9 @@ jobs:
 
       - name: Debug - Print head_ref
         run: |
-          echo "GITHUB_HEAD_REF: ${{ github.head_ref }}"
+          echo "ref: ${{ github.ref }}"
+          echo "ref_name: ${{ github.ref_name }}"
+          echo "head_ref: ${{ github.head_ref }}"
 
       - name: Fetch all branches
         run: git fetch --all
@@ -79,7 +81,7 @@ jobs:
           git config user.email "actions@github.com"
           git add package.json
           git commit -m "Bump version to ${{ env.NEW_VERSION }}"
-          git push origin ${{ github.head_ref }} # Empurra para a branch do PR mergeado
+          git push origin ${{  github.ref_name  }} # Empurra para a branch do PR mergeado
 
       - name: Create Git Tag
         id: create_tag
