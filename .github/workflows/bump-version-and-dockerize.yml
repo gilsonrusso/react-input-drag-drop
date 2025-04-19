@@ -64,15 +64,19 @@ jobs:
             console.log(newVersion);
           ")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "${{ env.NEW_VERSION }}" > version.txt
+
+      - name: Upload version artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: version
+          path: version.tx
 
       - name: Debug - Print head_ref
         run: |
           echo "ref: ${{ github.ref }}"
           echo "ref_name: ${{ github.ref_name }}"
           echo "head_ref: ${{ github.head_ref }}"
-
-      - name: Fetch all branches
-        run: git fetch --all
 
       - name: Update package.json with new version
         run: |
@@ -81,7 +85,7 @@ jobs:
           git config user.email "actions@github.com"
           git add package.json
           git commit -m "Bump version to ${{ env.NEW_VERSION }}"
-          git push origin ${{  github.ref_name  }} # Empurra para a branch do PR mergeado
+          git push origin ${{  github.ref_name  }}
 
       - name: Create Git Tag
         id: create_tag
@@ -109,10 +113,15 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract version from package.json
+      - name: Download version artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: version
+
+      - name: Load version from artifact
         id: package_version
         run: |
-          VERSION=$(jq -r '.version' package.json)
+          VERSION=$(cat version.txt)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
@@ -123,7 +132,7 @@ jobs:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPO_NAME }}
           tags: |
             latest
-            v${{ steps.package_version.outputs.VERSION }}
+            v${{ env.VERSION }}
 
       - name: Set Dockerfile dynamically
         id: set_dockerfile
