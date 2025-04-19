@@ -126,8 +126,21 @@ jobs:
             v${{ steps.package_version.outputs.VERSION }}
             ${{ github.sha }}
 
+      - name: Set Dockerfile dynamically
+        id: set_dockerfile
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "DOCKERFILE=Dockerfile.prod" >> $GITHUB_ENV
+          elif [[ "${{ github.ref_name }}" == "stage" ]]; then
+            echo "DOCKERFILE=Dockerfile.stage" >> $GITHUB_ENV
+          else
+            echo "DOCKERFILE=Dockerfile.dev" >> $GITHUB_ENV
+          fi
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
+          context: .
+          file: ${{ env.DOCKERFILE }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
