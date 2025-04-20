@@ -4,7 +4,7 @@ import { BasicForm } from "./components/BasicForm";
 function App() {
   return (
     <div>
-      <h1>Version 03</h1>
+      <h1>Version 1.0.6</h1>
       <BasicForm />
     </div>
   );
