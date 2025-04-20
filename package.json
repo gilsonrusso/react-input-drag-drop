@@ -1,7 +1,7 @@
 {
   "name": "masterizando-input-tailwind",
   "private": true,
-  "version": "1.0.2-4",
+  "version": "1.0.2-5",
   "type": "module",
   "scripts": {
     "dev": "vite",
