@@ -1,13 +1,4 @@
-name: Bump Version and Dockerize
-# This workflow bumps the version of the application based on the labels of the merged pull request.
-# It runs on the main and stage branches.
-# The workflow is triggered on pull request closed events.
-# It checks if the pull request was merged and then increments the version in package.json.
-# It also creates a Git tag for the new version and pushes it to the repository.
-# The workflow also builds and pushes a Docker image to Docker Hub.
-# The Docker image is tagged with the new version and the latest tag.
-# The workflow uses the Docker Buildx and Docker Login actions to build and push the image.
-# The workflow uses the Docker Metadata action to extract metadata from the package.json file.
+name: Build, Test, Bump Version, Dockerize and Publish, Update ArgoCD Helm
 
 on:
   pull_request:
@@ -16,7 +7,28 @@ on:
     branches: ["main", "stage"]
 
 jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "lts/*"
+
+      - name: Install dependencies
+        run: npm install
+
+      # - name: Run tests
+      #   run: npm test
+
+      - name: Build application
+        run: npm run build
+
   bump_version:
+    needs: build_and_test
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions:
@@ -38,11 +50,17 @@ jobs:
         id: check_label
         run: |
           bump="patch"
-          if [[ $(echo "${{ toJson(github.event.pull_request.labels) }}" | grep "major") ]]; then
+
+          echo "Base ref: ${{ github.base_ref }}"
+          echo "Head ref: ${{ github.head_ref }}"
+
+          if [[ "${{ github.base_ref }}" == "stage" && "${{ github.head_ref }}" == "dev" ]]; then
+            bump="pre"
+          elif echo "${{ toJson(github.event.pull_request.labels) }}" | grep -q "major"; then
             bump="major"
-          elif [[ $(echo "${{ toJson(github.event.pull_request.labels) }}" | grep "minor") ]]; then
+          elif echo "${{ toJson(github.event.pull_request.labels) }}" | grep -q "minor"; then
             bump="minor"
-          elif [[ $(echo "${{ toJson(github.event.pull_request.labels) }}" | grep "pre-release") ]]; then
+          elif echo "${{ toJson(github.event.pull_request.labels) }}" | grep -q "pre-release"; then
             bump="pre"
           fi
           echo "BUMP_TYPE=$bump" >> $GITHUB_ENV
@@ -94,7 +112,7 @@ jobs:
           git tag -a "v${{ env.NEW_VERSION }}" -m "Version ${{ env.NEW_VERSION }}"
           git push origin --tags
 
-  dockerize:
+  dockerize_and_publish:
     needs: bump_version
     runs-on: ubuntu-latest
     permissions:
@@ -155,3 +173,56 @@ jobs:
           file: ${{ env.DOCKERFILE }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+
+  update_argocd_helm:
+    needs: dockerize_and_publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download version artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: version_tag_artifact
+          path: .
+      - shell: bash
+        run: |
+          VERSION=$(cat version.txt)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Checkout ArgoCD Manifest Repository (main branch)
+        uses: actions/checkout@v4
+        with:
+          repository: gilsonrusso/argocd-trainning
+          token: ${{ secrets.GH_TOKEN_VERSION_REPO }}
+          path: argocd-trainning
+          ref: main
+
+      - name: Install yq
+        run: sudo apt-get update && sudo apt-get install -y yq
+
+      - name: Update values.prod.yaml (on merge to main)
+        if: github.event.pull_request.base.ref == 'main'
+        run: |
+          cd argocd-trainning
+          IMAGE_TAG="v${VERSION}"
+          yq -y ".app.image.tag = \"$IMAGE_TAG\"" values.prod.yaml -i
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add values.prod.yaml
+          git commit -m "Update production image tag to v${VERSION}"
+          git push origin main
+
+      - name: Update values.stage.yaml (on merge to stage)
+        if: github.event.pull_request.base.ref == 'stage'
+        run: |
+          cd argocd-trainning
+          IMAGE_TAG="v${VERSION}"
+          yq -y ".app.image.tag = \"$IMAGE_TAG\"" values.stage.yaml -i
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add values.stage.yaml
+          git commit -m "Update staging image tag to v${VERSION}"
+          git push origin main
