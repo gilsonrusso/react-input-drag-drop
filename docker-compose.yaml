@@ -1,0 +1,29 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - ./node_modules:/app/node_modules
+    environment:
+      NODE_ENV: development
+    stdin_open: true
+    tty: true
+    command: npm run dev -- --host
+
+  web-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    ports:
+      - "3000:80"
+    environment:
+      NODE_ENV: production
+# to run dev mode
+# docker-compose up web
+
+# to run prod mode
+# docker-compose up web-prod
