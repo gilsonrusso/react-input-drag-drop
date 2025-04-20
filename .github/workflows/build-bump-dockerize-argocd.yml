@@ -49,17 +49,20 @@ jobs:
       - name: Verify type of bump
         id: check_label
         run: |
-          bump="patch"
-
           echo "Base ref: ${{ github.base_ref }}"
           echo "Head ref: ${{ github.head_ref }}"
 
-          if [[ "${{ github.base_ref }}" == "stage" && "${{ github.head_ref }}" == "dev" ]]; then
-            bump="pre"
-          elif echo "${{ toJson(github.event.pull_request.labels) }}" | grep -q "major"; then
+          if [ -z "${{ github.event.pull_request.labels }}" ]; then
+            echo "Error: No labels found on the pull request. A label indicating the version bump type (major, minor, patch, or pre-release) is required."
+            exit 1
+          fi
+
+          if echo "${{ toJson(github.event.pull_request.labels) }}" | grep -q "major"; then
             bump="major"
           elif echo "${{ toJson(github.event.pull_request.labels) }}" | grep -q "minor"; then
             bump="minor"
+          elif echo "${{ toJson(github.event.pull_request.labels) }}" | grep -q "patch"; then
+            bump="patch"
           elif echo "${{ toJson(github.event.pull_request.labels) }}" | grep -q "pre-release"; then
             bump="pre"
           fi
