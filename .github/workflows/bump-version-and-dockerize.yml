@@ -61,10 +61,10 @@ jobs:
               bumpType = 'prerelease';
             }
             const newVersion = semver.inc(currentVersion, bumpType);
-            console.log(newVersion);
+            process.stdout.write(newVersion);
           ")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-          echo -n "${{ env.NEW_VERSION }}" > version.txt
+          echo -n "$NEW_VERSION" > version.txt
           cat -A version.txt
 
       - name: Upload version artifact
