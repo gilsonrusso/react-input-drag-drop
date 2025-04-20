@@ -125,7 +125,7 @@ jobs:
           VERSION=$(cat version.txt)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          cat version.txt
+          echo the version is $VERSION
 
       - name: Extract metadata (version from package.json)
         id: meta
@@ -134,7 +134,7 @@ jobs:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPO_NAME }}
           tags: |
             latest
-            v${{ env.VERSION }}
+            v${{ steps.package_version.outputs.VERSION }}
 
       - name: Set Dockerfile dynamically
         id: set_dockerfile
